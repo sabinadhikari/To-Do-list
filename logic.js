@@ -167,7 +167,12 @@ filterButtons.forEach(function(button) {
 });
 
 // Add button event
-addTaskButton.onclick = taskButton;
+// Add / Update task using Enter key
+inputTask.addEventListener("keydown", function(event) {
+    if (event.key === "Enter") {
+        taskButton();
+    }
+});
 
 // Initial display: restore saved tasks
 displayTasks();
