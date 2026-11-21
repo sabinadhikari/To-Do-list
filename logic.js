@@ -6,7 +6,7 @@ const totalTasks = document.getElementById("totalTasks");
 const completedTasks = document.getElementById("completedTasks");
 const pendingTasks = document.getElementById("pendingTasks");
 
-const filterButton = document.querySelectorAll(".filters-btn");
+const filterButton = document.querySelectorAll(".filter-btn");
 
 function taskButton() {
   let taskThings = inputTask.value.trim(); // trim - avoid unnecessary spaces in input field.
@@ -17,14 +17,12 @@ function taskButton() {
     return;
   }
 
-
   //edit
   if (editingTask !== null) {
     editingTask.querySelector("span").textContent = taskThings;
     editingTask = null;
 
-
-      //reset update to edit
+    //reset update to edit
     inputTask.value = "";
     addTaskButton.textContent = "Add Task";
 
@@ -84,23 +82,45 @@ function taskButton() {
     }
 
     updateStats();
-
-
   };
   updateStats();
 
-
-
-    // Edit button
+  // Edit button
   editBtn.onclick = function () {
     inputTask.value = taskText.textContent;
-      addTaskButton.textContent = "Update"
+    addTaskButton.textContent = "Update";
 
     editingTask = newTask;
   };
 }
 let editingTask = null;
 
+// Filter
+filterButton.forEach(function (button) {
+  button.onclick = function () {
+    let selectedFilter = button.dataset.filter;
+    let allTasks = document.querySelectorAll(".task-item");
+
+    allTasks.forEach(function (task) {
+      let isCompleted = task.classList.contains("completed");
+      if (selectedFilter === "all") {
+        task.style.display = "flex";
+      } else if (selectedFilter === "pending") {
+        if (isCompleted) {
+          task.style.display = "none";
+        } else {
+          task.style.display = "flex";
+        }
+      } else if (selectedFilter === "completed") {
+        if (isCompleted) {
+          task.style.display = "flex";
+        } else {
+          task.style.display = "none";
+        }
+      }
+    });
+  };
+});
 
 // Number update
 function updateStats() {
