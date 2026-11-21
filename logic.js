@@ -1,3 +1,4 @@
+
 const inputTask = document.getElementById("taskInput");
 const addTaskButton = document.getElementById("addTask");
 const listOfTask = document.getElementById("taskList");
@@ -6,131 +7,167 @@ const totalTasks = document.getElementById("totalTasks");
 const completedTasks = document.getElementById("completedTasks");
 const pendingTasks = document.getElementById("pendingTasks");
 
-const filterButton = document.querySelectorAll(".filter-btn");
+const filterButtons = document.querySelectorAll(".filter-btn");
 
-function taskButton() {
-  let taskThings = inputTask.value.trim(); // trim - avoid unnecessary spaces in input field.
+// Load saved tasks
+let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 
-  // to avoid entering empty taks
-  if (taskThings === "") {
-    alert("Enter the Task!");
-    return;
-  }
+let editingTask = null;
+let currentFilter = "all";
 
-  //edit
-  if (editingTask !== null) {
-    editingTask.querySelector("span").textContent = taskThings;
-    editingTask = null;
+// Save tasks to Local Storage
+function saveTasks() {
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+}
 
-    //reset update to edit
-    inputTask.value = "";
-    addTaskButton.textContent = "Add Task";
+// Update task statistics
+function updateStats() {
+    totalTasks.textContent = tasks.length;
 
-    return;
-  }
+    let completed = tasks.filter(function(task) {
+        return task.completed;
+    });
 
-  let newTask = document.createElement("div");
-  // newTask.textContent = taskThings;
+    completedTasks.textContent = completed.length;
+    pendingTasks.textContent = tasks.length - completed.length;
+}
 
-  inputTask.value = ""; // Clears the input field after adding the task.
+// Display tasks
+function displayTasks() {
+    listOfTask.innerHTML = "";
 
-  newTask.className = "task-item";
+    tasks.forEach(function(task, index) {
 
-  let allNewTask = document.createElement("div");
-  allNewTask.className = "task-content";
-  newTask.appendChild(allNewTask);
+        let newTask = document.createElement("div");
+        newTask.className = "task-item";
 
-  let inputHere = document.createElement("input");
-  inputHere.type = "checkbox";
-  allNewTask.appendChild(inputHere);
+        if (task.completed) {
+            newTask.classList.add("completed");
+        }
 
-  let taskText = document.createElement("span");
-  taskText.textContent = taskThings;
-  allNewTask.appendChild(taskText);
+        // Task content
+        let taskContent = document.createElement("div");
+        taskContent.className = "task-content";
 
-  let deleteBtn = document.createElement("button");
-  deleteBtn.className = "delete-btn";
-  deleteBtn.textContent = "Delete";
-  newTask.appendChild(deleteBtn);
+        let checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = task.completed;
 
-  let editBtn = document.createElement("button");
-  editBtn.className = "edit-btn";
-  editBtn.textContent = "Edit";
-  newTask.appendChild(editBtn);
+        let taskText = document.createElement("span");
+        taskText.textContent = task.text;
 
-  let buttonGroup = document.createElement("div");
-  buttonGroup.className = "button-group";
+        taskContent.appendChild(checkbox);
+        taskContent.appendChild(taskText);
 
-  buttonGroup.appendChild(editBtn);
-  buttonGroup.appendChild(deleteBtn);
+        newTask.appendChild(taskContent);
 
-  newTask.appendChild(buttonGroup);
+        // Button group
+        let buttonGroup = document.createElement("div");
+        buttonGroup.className = "button-group";
 
-  listOfTask.appendChild(newTask); // Add task to the taskList container
+        // Edit button
+        let editBtn = document.createElement("button");
+        editBtn.className = "edit-btn";
+        editBtn.textContent = "Edit";
 
-  deleteBtn.onclick = function () {
-    newTask.remove();
+        // Delete button
+        let deleteBtn = document.createElement("button");
+        deleteBtn.className = "delete-btn";
+        deleteBtn.textContent = "Delete";
+
+        buttonGroup.appendChild(editBtn);
+        buttonGroup.appendChild(deleteBtn);
+
+        newTask.appendChild(buttonGroup);
+
+        // Complete / Uncomplete task
+        checkbox.onchange = function() {
+            task.completed = checkbox.checked;
+
+            saveTasks();
+            displayTasks();
+        };
+
+        // Delete task
+        deleteBtn.onclick = function() {
+            tasks.splice(index, 1);
+
+            saveTasks();
+            displayTasks();
+        };
+
+        // Edit task
+        editBtn.onclick = function() {
+            inputTask.value = task.text;
+            addTaskButton.textContent = "Update";
+
+            editingTask = index;
+            inputTask.focus();
+        };
+
+        // Apply current filter
+        if (currentFilter === "all") {
+            newTask.style.display = "flex";
+        } else if (currentFilter === "pending") {
+            newTask.style.display = task.completed ? "none" : "flex";
+        } else if (currentFilter === "completed") {
+            newTask.style.display = task.completed ? "flex" : "none";
+        }
+
+        listOfTask.appendChild(newTask);
+    });
 
     updateStats();
-  };
+}
 
-  inputHere.onchange = function () {
-    if (inputHere.checked) {
-      newTask.classList.add("completed");
-    } else {
-      newTask.classList.remove("completed");
+// Add / Update task
+function taskButton() {
+    let taskThings = inputTask.value.trim();
+
+    if (taskThings === "") {
+        alert("Enter the Task!");
+        return;
     }
 
-    updateStats();
-  };
-  updateStats();
+    // Update existing task
+    if (editingTask !== null) {
+        tasks[editingTask].text = taskThings;
+        editingTask = null;
 
-  // Edit button
-  editBtn.onclick = function () {
-    inputTask.value = taskText.textContent;
-    addTaskButton.textContent = "Update";
+        addTaskButton.textContent = "Add Task";
+    } else {
+        // Add new task
+        tasks.push({
+            text: taskThings,
+            completed: false
+        });
+    }
 
-    editingTask = newTask;
-  };
+    inputTask.value = "";
+
+    saveTasks();
+    displayTasks();
 }
-let editingTask = null;
 
-// Filter
-filterButton.forEach(function (button) {
-  button.onclick = function () {
-    let selectedFilter = button.dataset.filter;
-    let allTasks = document.querySelectorAll(".task-item");
+// Filter buttons
+filterButtons.forEach(function(button) {
 
-    allTasks.forEach(function (task) {
-      let isCompleted = task.classList.contains("completed");
-      if (selectedFilter === "all") {
-        task.style.display = "flex";
-      } else if (selectedFilter === "pending") {
-        if (isCompleted) {
-          task.style.display = "none";
-        } else {
-          task.style.display = "flex";
-        }
-      } else if (selectedFilter === "completed") {
-        if (isCompleted) {
-          task.style.display = "flex";
-        } else {
-          task.style.display = "none";
-        }
-      }
-    });
-  };
+    button.onclick = function() {
+        currentFilter = button.dataset.filter;
+
+        filterButtons.forEach(function(btn) {
+            btn.classList.remove("active");
+        });
+
+        button.classList.add("active");
+
+        displayTasks();
+    };
+
 });
 
-// Number update
-function updateStats() {
-  let allTasks = document.querySelectorAll(".task-item");
-  totalTasks.textContent = allTasks.length;
-
-  let completed = document.querySelectorAll(".task-item.completed");
-  completedTasks.textContent = completed.length;
-
-  pendingTasks.textContent = allTasks.length - completed.length;
-}
-
+// Add button event
 addTaskButton.onclick = taskButton;
+
+// Initial display: restore saved tasks
+displayTasks();
